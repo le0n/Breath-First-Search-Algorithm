@@ -1,5 +1,6 @@
 import sys
 import time
+from collections import deque
 
 
 class Node:
@@ -9,7 +10,7 @@ class Node:
         self.action = action
 
 
-class StackFrontier:
+class QueueFrontier:
     def __init__(self):
         self.frontier = []
 
@@ -26,19 +27,29 @@ class StackFrontier:
         if self.empty():
             raise Exception("empty frontier")
         else:
-            node = self.frontier[:-1]
-            self.frontier = self.frontier[:-1]
+            node = self.frontier[0]
+            self.frontier = self.frontier[1:]
             return node
 
 
-class QueueFrontier(StackFrontier):
+class DeQueueFrontier:
+    def __init__(self):
+        self.frontier = deque()
+
+    def add(self, node):
+        self.frontier.append(node)
+
+    def contains_state(self, state):
+        return any(node.state == state for node in self.frontier)
+
+    def empty(self):
+        return len(self.frontier) == 0
+
     def remove(self):
         if self.empty():
             raise Exception("empty frontier")
         else:
-            node = self.frontier[0]
-            self.frontier = self.frontier[1:]
-            return node
+            return self.frontier.popleft()
 
 
 class Solver:
@@ -64,7 +75,6 @@ class Solver:
     def is_solvable(self, state1, state2):
         parity_1 = self.get_parity(state1)
         parity_2 = self.get_parity(state2)
-        print("parity 1 is:", parity_1, "parity 2 is:", parity_2)
         return parity_1 == parity_2
 
     def neighbours(self, state):
@@ -105,7 +115,7 @@ class Solver:
             raise Exception("Different parity, this is not solvable")
 
         start = Node(state=initial, parent=None, action=None)
-        frontier = QueueFrontier()
+        frontier = DeQueueFrontier()
         frontier.add(start)
 
         while True:
