@@ -51,6 +51,22 @@ class Solver:
         self.explored = set()
         self.number_explored = 0
 
+    def get_parity(self, state):
+        inversion = 0
+        state = state.replace("_", "")
+        for i in range(len(state)):  # Skip the blank tile
+            if i + 1 < len(state):
+                for j in range(i + 1, len(state)):
+                    if int(state[j]) < int(state[i]):
+                        inversion += 1
+        return inversion % 2
+
+    def is_solvable(self, state1, state2):
+        parity_1 = self.get_parity(state1)
+        parity_2 = self.get_parity(state2)
+        print("parity 1 is:", parity_1, "parity 2 is:", parity_2)
+        return parity_1 == parity_2
+
     def neighbours(self, state):
         """given a state, return a list of valid moves and the corresponding new state"""
         result = []
@@ -84,6 +100,9 @@ class Solver:
         if initial is None or goal is None:
             initial = self.initial
             goal = self.goal
+
+        if not self.is_solvable(initial, goal):
+            raise Exception("Different parity, this is not solvable")
 
         start = Node(state=initial, parent=None, action=None)
         frontier = QueueFrontier()
