@@ -1,4 +1,5 @@
 import sys
+import time
 
 
 class Node:
@@ -46,10 +47,40 @@ class Solver:
     def __init__(self, intial, goal):
         self.initial = intial
         self.goal = goal
-        self.solution = []
+        self.solution = None
+        self.explored = set()
+        self.number_explored = 0
+
+    def neighbours(self, state):
+        """given a state, return a list of valid moves and the corresponding new state"""
+        result = []
+        legalMoves = [("right", 1), ("left", -1), ("down", 3), ("up", -3)]
+        sourceLocation = state.index("_")
+
+        for name, move in legalMoves:
+            destinationLocation = sourceLocation + move
+
+            if destinationLocation >= len(state) or destinationLocation < 0:
+                # move out of bounds
+                continue
+            else:
+                # create a new state based on move
+                newState = ""
+                stateList = list(state)
+
+                swap = stateList[sourceLocation + move]
+                stateList[sourceLocation + move] = "_"
+                stateList[sourceLocation] = swap
+                result.append((name, newState.join(stateList)))
+        return result
+
+    def print_solution(self):
+        if self.solution is None:
+            print("solution is empty")
+        else:
+            print("actions for solution: ", self.solution[0])
 
     def solve(self, initial=None, goal=None):
-        number_explored = 0
         if initial is None or goal is None:
             initial = self.initial
             goal = self.goal
@@ -58,8 +89,6 @@ class Solver:
         frontier = QueueFrontier()
         frontier.add(start)
 
-        explored = set()
-
         while True:
             if frontier.empty():
                 raise Exception("Frontier empty, no solution")
@@ -67,7 +96,7 @@ class Solver:
             # choose a node from frontier
             # using queue so remove from beginning of list
             node = frontier.remove()
-            number_explored += 1
+            self.number_explored += 1
 
             # check for solution
             if node.state == goal:
@@ -80,6 +109,31 @@ class Solver:
                     cells.append(node.state)
                     node = node.parent
 
+                # reverse actions
                 actions.reverse()
                 cells.reverse()
-                self.so
+                self.solution = (actions, cells)
+                return
+
+            # if not solution, mark node as explored
+            self.explored.add(node.state)
+
+            for action, state in self.neighbours(node.state):
+                if not frontier.contains_state(state) and state not in self.explored:
+                    child = Node(state=state, parent=node, action=action)
+                    frontier.add(child)
+
+
+if len(sys.argv) != 3:
+    sys.exit("Usage: python bfs.py initial goal")
+
+m = Solver(sys.argv[1], sys.argv[2])
+start_time = time.perf_counter()
+print("Solving...")
+m.solve()
+end_time = time.perf_counter()
+print("States Explored:", m.number_explored)
+time_elapsed = round((end_time - start_time) * 1000, 5)
+print("Time elasped:", time_elapsed, "milliseconds")
+print("Solution:")
+m.print_solution()
